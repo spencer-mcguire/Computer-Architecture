@@ -5,7 +5,10 @@ import sys
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
+ADD = 0b10100000
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -21,7 +24,11 @@ class CPU:
             LDI: self.op_ldi,
             PRN: self.op_prn,
             MUL: self.op_mul,
+            PUSH: self.op_push,
+            POP: self.op_pop
         }
+        self.reg[7] = 0xF4
+        self.sp = self.reg[7]
 
     def load(self, filename):
         """Load a program into memory."""
@@ -72,8 +79,32 @@ class CPU:
     def op_prn(self, operand_a, operand_b):
         print(self.reg[operand_a])
 
+    def op_add(self, operand_a, operand_b):
+        self.alu('ADD', operand_a, operand_b)
+
     def op_mul(self, operand_a, operand_b):
         self.alu('MUL', operand_a, operand_b)
+    
+    def op_push(self, operand_a, operand_b):
+        #print(self.sp)
+        self.reg[7] = self.sp - 1
+        self.sp = self.reg[7]
+        #print(self.sp)
+
+        # grab the value at op a
+        val = self.reg[operand_a]
+
+        self.ram_write(self.sp, val)
+
+    def op_pop(self, operand_a, operand_b):
+        # get value to pop
+        val = self.ram_read(self.sp)
+
+        self.reg[operand_a] = val
+
+        self.reg[7] = self.sp + 1
+
+        self.sp = self.reg[7]
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -115,6 +146,8 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
 
             op_size = IR >> 6
+            # print('IR', IR)
+            # print("op_size", op_size)
 
             ins_set = ((IR >> 4) & 0b1) == 1
             # print('shift', (IR >> 4) & 0b1)
