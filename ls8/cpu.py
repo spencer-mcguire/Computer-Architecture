@@ -87,7 +87,8 @@ class CPU:
     
     def op_push(self, operand_a, operand_b):
         #print(self.sp)
-        self.reg[7] = self.sp - 1
+        self.sp -= 1
+
         #print(self.sp)
 
         # grab the value at op a
@@ -101,7 +102,7 @@ class CPU:
 
         self.reg[operand_a] = val
 
-        self.reg[7] = self.sp + 1
+        self.sp += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
