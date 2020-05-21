@@ -9,6 +9,8 @@ ADD = 0b10100000
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 class CPU:
     """Main CPU class."""
@@ -23,9 +25,12 @@ class CPU:
             HLT: self.op_hlt,
             LDI: self.op_ldi,
             PRN: self.op_prn,
+            ADD: self.op_add,
             MUL: self.op_mul,
             PUSH: self.op_push,
-            POP: self.op_pop
+            POP: self.op_pop,
+            CALL: self.op_call,
+            RET: self.op_ret
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
@@ -80,6 +85,7 @@ class CPU:
         print(self.reg[operand_a])
 
     def op_add(self, operand_a, operand_b):
+        #print('adding')
         self.alu('ADD', operand_a, operand_b)
 
     def op_mul(self, operand_a, operand_b):
@@ -104,11 +110,29 @@ class CPU:
 
         self.sp += 1
 
+    def op_call(self, operand_a, operand_b):
+        return_address = self.pc + 2
+        self.sp -= 1 
+        
+        self.ram_write(self.sp, return_address)
+
+        sub_addr = self.reg[operand_a]
+        # set pc to where you are jumping to
+        self.pc = sub_addr
+
+    def op_ret(self, operand_a, operand_b):
+        return_to = self.ram_read(self.sp)
+
+        self.sp += 1
+
+        self.pc = return_to
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+            #print('add')
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
@@ -149,7 +173,7 @@ class CPU:
 
             ins_set = ((IR >> 4) & 0b1) == 1
             # print('shift', (IR >> 4) & 0b1)
-            # print('ins_set', ins_set)
+            #print('ins_set', ins_set)
 
             if IR in self.branchtable:
                 self.branchtable[IR](operand_a, operand_b)
