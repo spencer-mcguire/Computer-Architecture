@@ -11,6 +11,10 @@ PUSH = 0b01000101
 POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -30,10 +34,12 @@ class CPU:
             PUSH: self.op_push,
             POP: self.op_pop,
             CALL: self.op_call,
-            RET: self.op_ret
+            RET: self.op_ret,
+            CMP: self.op_cmp
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
+        self.fl = 0b0
 
     def load(self, filename):
         """Load a program into memory."""
@@ -127,6 +133,9 @@ class CPU:
 
         self.pc = return_to
 
+    def op_cmp(self, operand_a, operand_b):
+        self.alu('CMP', operand_a, operand_b)
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -136,6 +145,19 @@ class CPU:
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+
+        elif op == "CMP":
+            if reg_a == reg_b:
+                self.fl = 0b00000001
+
+            elif reg_a > reg_b:
+                self.fl = 0b00000010
+
+            elif reg_a < reg_b:
+                self.fl = 0b00000100
+
+            
+
         else:
             raise Exception("Unsupported ALU operation")
 
