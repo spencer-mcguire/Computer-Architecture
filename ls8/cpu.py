@@ -47,7 +47,13 @@ class CPU:
             JMP: self.op_jmp,
             JEQ: self.op_jeq,
             JNE: self.op_jne,
-            AND: self.op_and
+            AND: self.op_and,
+            OR: self.op_or,
+            XOR: self.op_xor,
+            NOT: self.op_not,
+            SHL: self.op_shl,
+            SHR: self.op_shr,
+            MOD: self.op_mod
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
@@ -94,11 +100,7 @@ class CPU:
         self.alu('MUL', operand_a, operand_b)
     
     def op_push(self, operand_a, operand_b):
-        #print(self.sp)
         self.sp -= 1
-
-        #print(self.sp)
-
         # grab the value at op a
         val = self.reg[operand_a]
 
@@ -152,6 +154,24 @@ class CPU:
     def op_and(self, operand_a, operand_b):
         self.alu('AND', operand_a, operand_b)
 
+    def op_or(self, operand_a, operand_b):
+        self.alu('OR', operand_a, operand_b)
+
+    def op_xor(self, operand_a, operand_b):
+        self.alu("XOR", operand_a, operand_b)
+
+    def op_not(self, operand_a, operand_b):
+        self.alu("NOT", operand_a, operand_b)
+
+    def op_shl(self, operand_a, operand_b):
+        self.alu("SHL", operand_a, operand_b)
+
+    def op_shr(self, operand_a, operand_b):
+        self.alu("SHR", operand_a, operand_b)
+
+    def op_mod(self, operand_a, operand_b):
+        self.alu("MOD", operand_a, operand_b)
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -173,7 +193,35 @@ class CPU:
                 self.fl = 0b00000100
 
         elif op == "AND":
-            val = self.[reg_a] & self.reg[reg_b]
+            val = self.reg[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "OR":
+            val = self.reg[reg_a] | self.reg[reg_b]
+            self.reg[reg_a] = val
+        
+        elif op == "XOR":
+            val = self.reg[reg_a] ^ self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "NOT":
+            val = ~self.reg[reg_a]
+            self.reg[reg_a] = val
+
+        elif op == "SHL":
+            val = self.reg[reg_a] << self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "SHR":
+            val = self.reg[reg_a] >> self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "MOD":
+            if self.reg[reg_b] == 0:
+                print('ERROR: VAL at second register can not be 0')
+                self.op_hlt(reg_a, reg_b)
+                
+            val = self.reg[reg_a] % self.reg[reg_b]
             self.reg[reg_a] = val
 
         else:
