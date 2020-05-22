@@ -142,6 +142,12 @@ class CPU:
 
         self.pc = jump_to
 
+    def op_jeq(self, operand_a, operand_b):
+        if self.fl == 0b00000001:
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
