@@ -35,7 +35,8 @@ class CPU:
             POP: self.op_pop,
             CALL: self.op_call,
             RET: self.op_ret,
-            CMP: self.op_cmp
+            CMP: self.op_cmp,
+            JMP: self.op_jmp
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
@@ -136,6 +137,11 @@ class CPU:
     def op_cmp(self, operand_a, operand_b):
         self.alu('CMP', operand_a, operand_b)
 
+    def op_jmp(self, operand_a, operand_b):
+        jump_to = self.reg[operand_a]
+
+        self.pc = jump_to
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -155,8 +161,6 @@ class CPU:
 
             elif reg_a < reg_b:
                 self.fl = 0b00000100
-
-            
 
         else:
             raise Exception("Unsupported ALU operation")
