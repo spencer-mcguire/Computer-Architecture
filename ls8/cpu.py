@@ -15,6 +15,14 @@ CMP = 0b10100111
 JMP = 0b01010100
 JEQ = 0b01010101
 JNE = 0b01010110
+"""stretch"""
+AND = 0b10101000
+NOT = 0b01101001 
+OR  = 0b10101010
+XOR = 0b10101011
+SHL = 0b10101100
+SHR = 0b10101101
+MOD = 0b10100100
 
 class CPU:
     """Main CPU class."""
@@ -38,7 +46,8 @@ class CPU:
             CMP: self.op_cmp,
             JMP: self.op_jmp,
             JEQ: self.op_jeq,
-            JNE: self.op_jne
+            JNE: self.op_jne,
+            AND: self.op_and
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
@@ -60,22 +69,6 @@ class CPU:
                 if first_bit == '1' or first_bit == '0':
                     self.ram[address] = int(instruction[:8], 2)
                     address += 1
-
-        # # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
 
     def ram_read(self, MAR):
         return self.ram[MAR]
@@ -156,6 +149,9 @@ class CPU:
         else:
             self.pc += 2
 
+    def op_and(self, operand_a, operand_b):
+        self.alu('AND', operand_a, operand_b)
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -175,6 +171,10 @@ class CPU:
 
             elif self.reg[reg_a] < self.reg[reg_b]:
                 self.fl = 0b00000100
+
+        elif op == "AND":
+            val = self.[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = val
 
         else:
             raise Exception("Unsupported ALU operation")
