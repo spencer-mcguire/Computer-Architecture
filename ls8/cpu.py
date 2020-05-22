@@ -36,11 +36,13 @@ class CPU:
             CALL: self.op_call,
             RET: self.op_ret,
             CMP: self.op_cmp,
-            JMP: self.op_jmp
+            JMP: self.op_jmp,
+            JEQ: self.op_jeq,
+            JNE: self.op_jne
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
-        self.fl = 0b0
+        self.fl = 0b00000000
 
     def load(self, filename):
         """Load a program into memory."""
@@ -148,6 +150,12 @@ class CPU:
         else:
             self.pc += 2
 
+    def op_jne(self, operand_a, operand_b):
+        if self.fl != 0b00000001:
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -159,13 +167,13 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b]
 
         elif op == "CMP":
-            if reg_a == reg_b:
+            if self.reg[reg_a] == self.reg[reg_b]:
                 self.fl = 0b00000001
 
-            elif reg_a > reg_b:
+            elif self.reg[reg_a] > self.reg[reg_b]:
                 self.fl = 0b00000010
 
-            elif reg_a < reg_b:
+            elif self.reg[reg_a] < self.reg[reg_b]:
                 self.fl = 0b00000100
 
         else:
