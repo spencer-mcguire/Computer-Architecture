@@ -9,6 +9,20 @@ ADD = 0b10100000
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
+"""stretch"""
+AND = 0b10101000
+NOT = 0b01101001 
+OR  = 0b10101010
+XOR = 0b10101011
+SHL = 0b10101100
+SHR = 0b10101101
+MOD = 0b10100100
 
 class CPU:
     """Main CPU class."""
@@ -23,12 +37,27 @@ class CPU:
             HLT: self.op_hlt,
             LDI: self.op_ldi,
             PRN: self.op_prn,
+            ADD: self.op_add,
             MUL: self.op_mul,
             PUSH: self.op_push,
-            POP: self.op_pop
+            POP: self.op_pop,
+            CALL: self.op_call,
+            RET: self.op_ret,
+            CMP: self.op_cmp,
+            JMP: self.op_jmp,
+            JEQ: self.op_jeq,
+            JNE: self.op_jne,
+            AND: self.op_and,
+            OR: self.op_or,
+            XOR: self.op_xor,
+            NOT: self.op_not,
+            SHL: self.op_shl,
+            SHR: self.op_shr,
+            MOD: self.op_mod
         }
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
+        self.fl = 0b00000000
 
     def load(self, filename):
         """Load a program into memory."""
@@ -47,22 +76,6 @@ class CPU:
                     self.ram[address] = int(instruction[:8], 2)
                     address += 1
 
-        # # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
     def ram_read(self, MAR):
         return self.ram[MAR]
 
@@ -80,17 +93,14 @@ class CPU:
         print(self.reg[operand_a])
 
     def op_add(self, operand_a, operand_b):
+        #print('adding')
         self.alu('ADD', operand_a, operand_b)
 
     def op_mul(self, operand_a, operand_b):
         self.alu('MUL', operand_a, operand_b)
     
     def op_push(self, operand_a, operand_b):
-        #print(self.sp)
         self.sp -= 1
-
-        #print(self.sp)
-
         # grab the value at op a
         val = self.reg[operand_a]
 
@@ -104,14 +114,116 @@ class CPU:
 
         self.sp += 1
 
+    def op_call(self, operand_a, operand_b):
+        return_address = self.pc + 2
+        self.sp -= 1 
+        
+        self.ram_write(self.sp, return_address)
+
+        sub_addr = self.reg[operand_a]
+        # set pc to where you are jumping to
+        self.pc = sub_addr
+
+    def op_ret(self, operand_a, operand_b):
+        return_to = self.ram_read(self.sp)
+
+        self.sp += 1
+
+        self.pc = return_to
+
+    def op_cmp(self, operand_a, operand_b):
+        self.alu('CMP', operand_a, operand_b)
+
+    def op_jmp(self, operand_a, operand_b):
+        jump_to = self.reg[operand_a]
+
+        self.pc = jump_to
+
+    def op_jeq(self, operand_a, operand_b):
+        if self.fl == 0b00000001:
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
+
+    def op_jne(self, operand_a, operand_b):
+        if self.fl != 0b00000001:
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
+
+    def op_and(self, operand_a, operand_b):
+        self.alu('AND', operand_a, operand_b)
+
+    def op_or(self, operand_a, operand_b):
+        self.alu('OR', operand_a, operand_b)
+
+    def op_xor(self, operand_a, operand_b):
+        self.alu("XOR", operand_a, operand_b)
+
+    def op_not(self, operand_a, operand_b):
+        self.alu("NOT", operand_a, operand_b)
+
+    def op_shl(self, operand_a, operand_b):
+        self.alu("SHL", operand_a, operand_b)
+
+    def op_shr(self, operand_a, operand_b):
+        self.alu("SHR", operand_a, operand_b)
+
+    def op_mod(self, operand_a, operand_b):
+        self.alu("MOD", operand_a, operand_b)
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+            #print('add')
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = 0b00000001
+
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 0b00000010
+
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.fl = 0b00000100
+
+        elif op == "AND":
+            val = self.reg[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "OR":
+            val = self.reg[reg_a] | self.reg[reg_b]
+            self.reg[reg_a] = val
+        
+        elif op == "XOR":
+            val = self.reg[reg_a] ^ self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "NOT":
+            val = ~self.reg[reg_a]
+            self.reg[reg_a] = val
+
+        elif op == "SHL":
+            val = self.reg[reg_a] << self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "SHR":
+            val = self.reg[reg_a] >> self.reg[reg_b]
+            self.reg[reg_a] = val
+
+        elif op == "MOD":
+            if self.reg[reg_b] == 0:
+                print('ERROR: VAL at second register can not be 0')
+                self.op_hlt(reg_a, reg_b)
+                
+            val = self.reg[reg_a] % self.reg[reg_b]
+            self.reg[reg_a] = val
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -149,7 +261,7 @@ class CPU:
 
             ins_set = ((IR >> 4) & 0b1) == 1
             # print('shift', (IR >> 4) & 0b1)
-            # print('ins_set', ins_set)
+            #print('ins_set', ins_set)
 
             if IR in self.branchtable:
                 self.branchtable[IR](operand_a, operand_b)
